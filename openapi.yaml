@@ -1,0 +1,247 @@
+openapi: 3.0.0
+info:
+  title: API de Usuarios
+  version: 1.0.0
+  description: API para administrar usuarios y autenticación.
+
+paths:
+  /usuarios:
+    get:
+      summary: Obtener todos los usuarios
+      responses:
+        '200':
+          description: Lista de usuarios recuperada con éxito
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  page:
+                    type: integer
+                  perPage:
+                    type: integer
+                  totalUsers:
+                    type: integer
+                  users:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                        nombre:
+                          type: string
+                        email:
+                          type: string
+                required:
+                  - page
+                  - perPage
+                  - totalUsers
+                  - users
+        '500':
+          description: Error en el servidor
+
+  /usuarios:
+    post:
+      summary: Agregar un nuevo usuario
+      requestBody:
+        description: Datos del usuario a agregar
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - nombre
+                - contrasena
+                - email
+              properties:
+                nombre:
+                  type: string
+                contrasena:
+                  type: string
+                email:
+                  type: string
+      responses:
+        '200':
+          description: Usuario agregado con éxito
+        '400':
+          description: Error en la solicitud, campos faltantes o correo electrónico ya registrado
+        '500':
+          description: Error en el servidor
+
+  /usuarios/{id}:
+    put:
+      summary: Actualizar los datos de un usuario por ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        description: Nuevos datos del usuario
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                nombre:
+                  type: string
+                email:
+                  type: string
+      responses:
+        '200':
+          description: Datos de usuario actualizados con éxito
+        '400':
+          description: Error en la solicitud, campos faltantes o usuario no encontrado
+        '500':
+          description: Error en el servidor
+
+  /usuarios/{id}:
+    delete:
+      summary: Eliminar un usuario por ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Usuario eliminado con éxito
+        '400':
+          description: Error en la solicitud, ID de usuario no proporcionado
+        '500':
+          description: Error en el servidor
+
+  /sesion:
+    post:
+      summary: Iniciar sesión de usuario
+      requestBody:
+        description: Correo electrónico y contraseña del usuario
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - contrasena
+              properties:
+                email:
+                  type: string
+                contrasena:
+                  type: string
+      responses:
+        '200':
+          description: Inicio de sesión exitoso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  token:
+                    type: string
+        '400':
+          description: Error en la solicitud, correo electrónico y/o contraseña faltantes
+        '401':
+          description: Credenciales inválidas
+        '500':
+          description: Error en el servidor
+
+  /usuarios/{id}/clave:
+    put:
+      summary: Actualizar la contraseña del usuario por ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        description: Contraseña actual y nueva contraseña
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - contrasenaActual
+                - nuevaContrasena
+              properties:
+                contrasenaActual:
+                  type: string
+                nuevaContrasena:
+                  type: string
+      responses:
+        '200':
+          description: Contraseña actualizada con éxito
+        '400':
+          description: Error en la solicitud, campos faltantes, contraseña actual incorrecta o usuario no encontrado
+        '500':
+          description: Error en el servidor
+
+  /recuperacion_contra:
+    post:
+      summary: Solicitar recuperación de contraseña
+      requestBody:
+        description: Correo electrónico para la recuperación
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+              properties:
+                email:
+                  type: string
+      responses:
+        '200':
+          description: Se ha generado un token de recuperación
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  mensaje:
+                    type: string
+                  token:
+                    type: string
+        '400':
+          description: Error en la solicitud, correo electrónico faltante
+        '500':
+          description: Error en el servidor
+
+  /restablecimiento_contra:
+    post:
+      summary: Restablecer la contraseña
+      requestBody:
+        description: Correo electrónico, nueva contraseña y token de recuperación
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - new_password
+                - reset_token
+              properties:
+                email:
+                  type: string
+                new_password:
+                  type: string
+                reset_token:
+                  type: string
+      responses:
+        '200':
+          description: Contraseña restablecida con éxito
+        '400':
+          description: Error en la solicitud, token de recuperación inválido o expirado, o datos faltantes
+        '500':
+          description: Error en el servidor
