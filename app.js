@@ -126,7 +126,7 @@ app.post('/usuarios', (req, res) => {
             // Crear y publicar el evento de usuario registrado en Redis
             const userRegisteredEvent = {
                 type: 'USER_REGISTERED',
-                userId: userId, // Este es el ID que usaremos en la aplicación de perfil
+                userId: userId,
             };
             publisherClient.publish('canal-registro-usuario', JSON.stringify(userRegisteredEvent));
 

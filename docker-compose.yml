@@ -1,33 +1,3 @@
-# version: '3'
-
-# services:
-#   app:
-#     build:
-#       context: .
-#       dockerfile: Dockerfile.app
-#     ports:
-#       - "3000:3000"
-#     depends_on:
-#       - redis
-#     env_file:
-#       - .env
-
-#   redis:
-#     image: redis:latest
-#     env_file:
-#       - redis.env
-
-#   consumidor:
-#     build:
-#       context: .
-#       dockerfile: Dockerfile.consumidor
-#     env_file:
-#       - logs.env
-#     ports:
-#       - "4001:4001"
-#     depends_on:
-#       - redis
-
 version: '3'
 
 services:
@@ -67,4 +37,14 @@ services:
     volumes:
       - ./data:/data
     depends_on:
+      - redis
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile.apiGateway
+    ports:
+      - "3003:3003"
+    depends_on:
+      - app
       - redis

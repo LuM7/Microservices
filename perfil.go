@@ -39,12 +39,6 @@ type PerfilUsuario struct {
 	RedesSociales  []string `json:"redes_sociales"`
 }
 
-// Estructura para leer el evento del mensaje de Redis
-type SesionEvento struct {
-	UserId string `json:"userId"`
-	Token  string `json:"token"`
-}
-
 func main() {
 	var err error
 
@@ -72,7 +66,7 @@ func main() {
 
 	r.GET("/perfil/:id", obtenerPerfil)
 	r.PUT("/perfil/:id", actualizarPerfil)
-	r.POST("/perfil", crearPerfil)
+	//	r.POST("/perfil", crearPerfil)
 	r.GET("/perfiles", listarPerfiles)
 
 	r.Run(":3002") // Puerto  0.0.0.0:3002
@@ -96,32 +90,32 @@ func crearTablaPerfiles() error {
 	return err
 }
 
-func crearPerfil(c *gin.Context) {
-	// Estructura para recibir los datos del nuevo perfil
-	var nuevoPerfil PerfilUsuario
+// func crearPerfil(c *gin.Context) {
+// 	// Estructura para recibir los datos del nuevo perfil
+// 	var nuevoPerfil PerfilUsuario
 
-	if err := c.ShouldBindJSON(&nuevoPerfil); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Datos de perfil no válidos"})
-		return
-	}
+// 	if err := c.ShouldBindJSON(&nuevoPerfil); err != nil {
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": "Datos de perfil no válidos"})
+// 		return
+// 	}
 
-	// Realizar la inserción en la base de datos
-	query := `
-        INSERT INTO perfiles_usuarios (url_personal, apodo, info_contacto, direccion, biografia, organizacion, pais_residencia, redes_sociales)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `
-	_, err := db.Exec(query, nuevoPerfil.URLPersonal, nuevoPerfil.Apodo, nuevoPerfil.InfoContacto, nuevoPerfil.Direccion, nuevoPerfil.Biografia, nuevoPerfil.Organizacion, nuevoPerfil.PaisResidencia, strings.Join(nuevoPerfil.RedesSociales, ","))
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al crear el perfil"})
-		return
-	}
+// 	// Realizar la inserción en la base de datos
+// 	query := `
+//         INSERT INTO perfiles_usuarios (url_personal, apodo, info_contacto, direccion, biografia, organizacion, pais_residencia, redes_sociales)
+//         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+//     `
+// 	_, err := db.Exec(query, nuevoPerfil.URLPersonal, nuevoPerfil.Apodo, nuevoPerfil.InfoContacto, nuevoPerfil.Direccion, nuevoPerfil.Biografia, nuevoPerfil.Organizacion, nuevoPerfil.PaisResidencia, strings.Join(nuevoPerfil.RedesSociales, ","))
+// 	if err != nil {
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al crear el perfil"})
+// 		return
+// 	}
 
-	// Registrar la operación en el sistema de logs
-	registrarInvocacion("Perfil", "Creación", "Perfil", "Perfil creado", "Se ha creado un nuevo perfil.")
+// 	// Registrar la operación en el sistema de logs
+// 	registrarInvocacion("Perfil", "Creación", "Perfil", "Perfil creado", "Se ha creado un nuevo perfil.")
 
-	// respuesta
-	c.JSON(http.StatusCreated, gin.H{"message": "Perfil de usuario creado con éxito"})
-}
+// 	// respuesta
+// 	c.JSON(http.StatusCreated, gin.H{"message": "Perfil de usuario creado con éxito"})
+// }
 
 func obtenerPerfil(c *gin.Context) {
 	userID := c.Param("id")
@@ -358,7 +352,9 @@ func crearPerfilPredeterminado(id int) {
 		return
 	}
 
-	log.Println("Perfil predeterminado creado para el id:", id)
+	mensaje := fmt.Sprintf("Se creó un perfil para el usuario %v", id)
+	registrarInvocacion("Perfil", "Creacion Perfil", "Perfil", "Se ha creado un perfil predeterminado", mensaje)
+
 }
 
 func validarToken(tokenString string) (*jwt.Token, error) {
