@@ -198,6 +198,11 @@ app.put('/usuarios/:id', async (req, res) => {
     });
 });
 
+// Ruta para verificar la autenticación del usuario
+app.get('/autenticacion/:id', verificarToken, (req, res) => {
+    // Si el middleware de verificarToken no lanza un error, el usuario está autenticado
+    res.json({ message: 'Autenticación verificada con éxito', userId: req.params.id });
+});
 
 // Ruta para eliminar un usuario por ID
 app.delete('/usuarios/:id', (req, res) => {
