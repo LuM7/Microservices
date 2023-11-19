@@ -1,0 +1,122 @@
+openapi: 3.0.0
+info:
+  title: Servicio de Gestión de Perfiles
+  description: API para la gestión de perfiles de usuario.
+  version: "1.0.0"
+servers:
+  - url: http://localhost:3002
+    description: Servidor de desarrollo
+
+paths:
+  /perfil/{id}:
+    get:
+      summary: Obtener un perfil de usuario
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: ID del usuario
+      responses:
+        '200':
+          description: Perfil de usuario encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PerfilUsuario'
+        '404':
+          description: Usuario no encontrado
+
+    put:
+      summary: Actualizar un perfil de usuario
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: ID del usuario
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PerfilUsuario'
+      responses:
+        '200':
+          description: Perfil actualizado con éxito
+        '400':
+          description: Datos de perfil no válidos
+        '401':
+          description: Token no válido
+        '403':
+          description: No tienes permiso para actualizar este perfil
+        '500':
+          description: Error al actualizar el perfil
+
+  /perfiles:
+    get:
+      summary: Listar todos los perfiles de usuario
+      responses:
+        '200':
+          description: Lista de perfiles de usuario
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PerfilUsuario'
+        '500':
+          description: Error al recuperar los perfiles
+
+  /health:
+    get:
+      summary: Verificar el estado general del servicio
+      responses:
+        '200':
+          description: Servicio en funcionamiento
+
+  /health/ready:
+    get:
+      summary: Verificar el estado de readiness del servicio
+      responses:
+        '200':
+          description: Servicio listo
+        '500':
+          description: Servicio no está listo
+
+  /health/live:
+    get:
+      summary: Verificar el estado de liveness del servicio
+      responses:
+        '200':
+          description: Servicio vivo
+
+components:
+  schemas:
+    PerfilUsuario:
+      type: object
+      properties:
+        id:
+          type: integer
+        url_personal:
+          type: string
+        apodo:
+          type: string
+        info_contacto:
+          type: string
+        direccion:
+          type: string
+        biografia:
+          type: string
+        organizacion:
+          type: string
+        pais_residencia:
+          type: string
+        redes_sociales:
+          type: array
+          items:
+            type: string
+      required:
+        - id

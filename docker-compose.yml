@@ -48,3 +48,10 @@ services:
     depends_on:
       - app
       - redis
+
+  test:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    depends_on:
+      - app
