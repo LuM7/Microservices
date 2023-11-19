@@ -68,6 +68,11 @@ func main() {
 	r.PUT("/perfil/:id", actualizarPerfil)
 	r.GET("/perfiles", listarPerfiles)
 
+	// Añade aquí las nuevas rutas para el reto
+	r.GET("/health", healthCheck)
+	r.GET("/health/ready", healthReady)
+	r.GET("/health/live", healthLive)
+
 	r.Run(":3002") // Puerto  0.0.0.0:3002
 }
 
@@ -355,4 +360,33 @@ func validarToken(tokenString string) (*jwt.Token, error) {
 	}
 
 	return token, nil
+}
+
+// Health Check general
+func healthCheck(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{"status": "UP"})
+}
+
+// Health Check de readiness
+func healthReady(c *gin.Context) {
+	// Verificar la conexión a la base de datos
+	if err := db.Ping(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "DOWN", "error": "Database not ready"})
+		return
+	}
+
+	// Verificar la conexión a Redis
+	if _, err := redisCliente.Ping().Result(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "DOWN", "error": "Redis not ready"})
+		return
+	}
+
+	// Si todo está bien
+	c.JSON(http.StatusOK, gin.H{"status": "READY"})
+}
+
+// Health Check de liveness
+func healthLive(c *gin.Context) {
+	// Aquí simplemente devuelves que el servicio está vivo
+	c.JSON(http.StatusOK, gin.H{"status": "ALIVE"})
 }

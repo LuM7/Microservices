@@ -442,6 +442,101 @@ app.post('/restablecimiento_contra', (req, res) => {
     }
 });
 
+//Rutas de Salud
+// Función para verificar la base de datos
+function checkDatabase() {
+    return new Promise((resolve, reject) => {
+        db.get('SELECT 1', (err) => {
+            if (err) {
+                return reject('La base de datos no está accesible');
+            }
+            resolve('La base de datos está accesible');
+        });
+    });
+}
+
+// Función para verificar Redis
+function checkRedis() {
+    return new Promise((resolve, reject) => {
+        publisherClient.ping((err, pong) => {
+            if (err || pong !== 'PONG') {
+                return reject('Redis no está accesible');
+            }
+            resolve('Redis está accesible');
+        });
+    });
+}
+
+// Ruta para verificar el estado general del servicio
+app.get('/health', async (req, res) => {
+    try {
+        const dbStatus = await checkDatabase();
+        const redisStatus = await checkRedis();
+
+        // Si llegamos aquí, ambos servicios están "vivos" y "listos"
+        res.json({
+            status: 'up',
+            checks: [
+                {
+                    name: 'Readiness check',
+                    status: dbStatus,
+                },
+                {
+                    name: 'Liveness check',
+                    status: redisStatus,
+                }
+            ]
+        });
+    } catch (error) {
+        // Si hay un error, uno de los servicios no está "vivo" o "listo"
+        res.status(500).json({
+            status: 'down',
+            checks: [
+                {
+                    name: 'Readiness check',
+                    status: 'La base de datos no está accesible',
+                },
+                {
+                    name: 'Liveness check',
+                    status: 'Redis no está accesible',
+                }
+            ],
+            error: error
+        });
+    }
+});
+
+// Ruta para verificar si el servicio está listo para manejar tráfico
+app.get('/health/ready', (req, res) => {
+    try {
+        // Verifica si la base de datos está conectada
+        db.get('SELECT 1', (err) => {
+            if (err) {
+                throw new Error('La base de datos no está accesible');
+            }
+            // Verifica si Redis está conectado
+            publisherClient.ping((err, pong) => {
+                if (err) {
+                    throw new Error('Redis no está accesible');
+                }
+                if (pong !== 'PONG') {
+                    throw new Error('Respuesta inesperada de Redis');
+                }
+                res.json({ status: 'ready' });
+            });
+        });
+    } catch (error) {
+        res.status(500).json({ status: 'not ready', error: error.message });
+    }
+});
+
+// Ruta para verificar si el servicio está vivo
+app.get('/health/live', (req, res) => {
+    // Si puedes responder a esta solicitud, entonces el servicio está vivo
+    res.json({ status: 'live' });
+});
+
+
 // Iniciar el servidor
 app.listen(port, () => {
     console.log(`Servidor escuchando en el puerto ${port}`);
