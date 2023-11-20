@@ -27,6 +27,8 @@ app.use(bodyParser.json());
 // Obtener la configuración de Redis desde variables de entorno
 const redisHost = process.env.REDIS_HOST
 const redisPort = process.env.REDIS_PORT
+const canalLogs = process.env.CANAL_LOGS
+const canalRegistro = process.env.CANAL_EVENTOS_REGISTRO
 
 app.use(express.static(__dirname));
 // Crear la tabla de usuarios si no existe
@@ -130,7 +132,7 @@ app.post('/usuarios', (req, res) => {
                 type: 'USER_REGISTERED',
                 userId: userId,
             };
-            publisherClient.publish('canal-registro-usuario', JSON.stringify(userRegisteredEvent));
+            publisherClient.publish(canalRegistro, JSON.stringify(userRegisteredEvent));
 
             // Crear un registro de log para el servicio de registro de usuario
             const logData = {
@@ -142,7 +144,7 @@ app.post('/usuarios', (req, res) => {
                 descripcion: `Se ha registrado un nuevo usuario con el correo ${email}`,
             };
             // Se publican los datos del log en el canal 'canal-logs' de Redis
-            publisherClient.publish('canal-logs', JSON.stringify(logData));
+            publisherClient.publish(canalLogs, JSON.stringify(logData));
         });
     });
 });
@@ -207,24 +209,47 @@ app.get('/autenticacion/:id', verificarToken, (req, res) => {
 });
 
 // Ruta para eliminar un usuario por ID
-app.delete('/usuarios/:id', (req, res) => {
+app.delete('/usuarios/:id', verificarToken, (req, res) => {
     const userId = req.params.id;
 
     if (!userId) {
-        res.status(400).json({ error: 'ID de usuario no proporcionado' });
-        return;
+        return res.status(400).json({ error: 'ID de usuario no proporcionado' });
+    }
+
+    // Asegurarse de que el usuario solo pueda eliminar su propio perfil
+    if (req.userId !== parseInt(userId)) {
+        return res.status(403).json({ error: 'No autorizado para eliminar este usuario' });
     }
 
     const query = 'DELETE FROM usuarios WHERE id = ?';
     db.run(query, [userId], (err) => {
         if (err) {
             console.error(err.message);
-            res.status(500).json({ error: 'Error en el servidor' });
-            return;
+            return res.status(500).json({ error: 'Error en el servidor' });
         }
+
+        // Crear un registro de log para el servicio de registro de usuario
+        const logData = {
+            application: nombreAplicación,
+            fecha_hora: moment().tz('America/Bogota').format('YYYY-MM-DD HH:mm:ss'),
+            tipo_log: 'Eliminación de Usuario',
+            modulo: 'Usuarios',
+            resumen: 'Se ha eliminado un usuario',
+            descripcion: `El usuario ha eliminado su cuenta`,
+        };
+        // Se publican los datos del log en el canal 'canal-logs' de Redis
+        publisherClient.publish(canalLogs, JSON.stringify(logData));
+
+        // Publicar un evento para eliminar el perfil asociado al usuario
+        const userDeletedEvent = {
+            type: 'USER_DELETED',
+            userId: userId,
+        };
+        publisherClient.publish(canalRegistro, JSON.stringify(userDeletedEvent));
         res.json({ message: 'Usuario eliminado con éxito' });
     });
 });
+
 
 // Ruta para el inicio de sesión de usuario
 app.post('/sesion', async (req, res) => {
@@ -259,7 +284,7 @@ app.post('/sesion', async (req, res) => {
             descripcion: 'El usuario no pudo iniciar sesión debido a credenciales incorrectas.',
         };
         // Publicar un mensaje a Redis si existe error en credenciales
-        publisherClient.publish('canal-logs', JSON.stringify(errorLogData));
+        publisherClient.publish(canalLogs, JSON.stringify(errorLogData));
         return;
     }
 
@@ -276,7 +301,7 @@ app.post('/sesion', async (req, res) => {
     };
 
     // Publica el LOG en el canal 'canal-logs' de Redis
-    publisherClient.publish('canal-logs', JSON.stringify(logData));
+    publisherClient.publish(canalLogs, JSON.stringify(logData));
     res.json({ message: 'Inicio de sesión exitoso', token });
 
 
@@ -291,7 +316,7 @@ app.post('/sesion', async (req, res) => {
     };
 
     // Publicar un mensaje a Redis cuando el usuario se autentique
-    publisherClient.publish('canal-logs', JSON.stringify(successLogData));
+    publisherClient.publish(canalLogs, JSON.stringify(successLogData));
 });
 
 // Ruta para actualizar la contraseña del usuario
@@ -304,9 +329,6 @@ app.put('/usuarios/:id/clave', verificarToken, async (req, res) => {
         return;
     }
 
-    // Aquí agregamos una impresión para mostrar el token recibido
-    console.log('Token recibido en la solicitud PUT:', req.header('Authorization'));
-    console.log('Token recibido en la solicitud PUT:', req.header('Authorization'));
     // Verificar si el usuario existe en la base de datos
     const user = await new Promise((resolve, reject) => {
         db.get('SELECT * FROM usuarios WHERE id = ?', [userId], (err, row) => {
@@ -349,7 +371,7 @@ app.put('/usuarios/:id/clave', verificarToken, async (req, res) => {
         descripcion: `Se ha actualizado la contraseña del usuario con ID ${userId}`,
     };
     // Publicar un mensaje a Redis 
-    publisherClient.publish('canal-logs', JSON.stringify(logData));
+    publisherClient.publish(canalLogs, JSON.stringify(logData));
 
 });
 
@@ -374,7 +396,7 @@ app.post('/recuperacion_contra', (req, res) => {
         descripcion: `Se ha solicitado la recuperación de contraseña para el correo ${email}`,
     };
     // Publicar un mensaje a Redis 
-    publisherClient.publish('canal-logs', JSON.stringify(logData));
+    publisherClient.publish(canalLogs, JSON.stringify(logData));
 
     // Aquí solo mostramos el token generado
     return res.status(200).json({ mensaje: 'Se ha generado un token de recuperación', token: resetToken });
@@ -406,7 +428,7 @@ app.post('/restablecimiento_contra', (req, res) => {
             };
 
             // Publicar un mensaje a Redis 
-            publisherClient.publish('canal-logs', JSON.stringify(logData));
+            publisherClient.publish(canalLogs, JSON.stringify(logData));
 
             delete resetTokens[email]; // Eliminar el token después de su uso
 
@@ -423,7 +445,7 @@ app.post('/restablecimiento_contra', (req, res) => {
             };
 
             // Publicar un mensaje a Redis 
-            publisherClient.publish('canal-logs', JSON.stringify(logData));
+            publisherClient.publish(canalLogs, JSON.stringify(logData));
             return res.status(400).json({ mensaje: 'Token de recuperación inválido o expirado' });
         }
     } else {
@@ -438,7 +460,7 @@ app.post('/restablecimiento_contra', (req, res) => {
         };
 
         // Publicar un mensaje a Redis 
-        publisherClient.publish('canal-logs', JSON.stringify(logData));
+        publisherClient.publish(canalLogs, JSON.stringify(logData));
 
         return res.status(400).json({ mensaje: 'No se encontró el token de recuperación' });
     }

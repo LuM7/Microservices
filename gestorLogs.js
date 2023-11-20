@@ -9,7 +9,7 @@ const redis = require('ioredis');
 module.exports = app;
 
 const subscriberClient = new redis({
-    host: 'redis',
+    host: process.env.REDIS_HOST,
     port: process.env.REDIS_PORT,
 });
 
@@ -215,6 +215,39 @@ app.post('/logs', (req, res) => {
 
             res.json({ message: 'Registro de log creado con éxito' });
         });
+});
+
+// Ruta para verificar el estado general del servicio (Health Check)
+app.get('/health', (req, res) => {
+    res.json({ status: 'UP' });
+});
+
+// Ruta para verificar si el servicio está vivo (Liveness Check)
+app.get('/health/live', (req, res) => {
+    res.json({ status: 'ALIVE' });
+});
+
+// Ruta para verificar si el servicio está listo para manejar tráfico (Readiness Check)
+app.get('/health/ready', async (req, res) => {
+    try {
+        // Verificar la conexión a la base de datos SQLite
+        await new Promise((resolve, reject) => {
+            db.get('SELECT 1', (err) => {
+                if (err) reject('Database not ready');
+                else resolve('Database ready');
+            });
+        });
+
+        // Verificar la conexión a Redis
+        const pong = await subscriberClient.ping();
+        if (pong !== 'PONG') {
+            throw new Error('Redis not ready');
+        }
+
+        res.json({ status: 'READY' });
+    } catch (error) {
+        res.status(500).json({ status: 'NOT READY', error: error });
+    }
 });
 
 
