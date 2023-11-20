@@ -1,0 +1,223 @@
+openapi: 3.0.0
+info:
+  title: API Gateway
+  version: 1.0.0
+  description: API Gateway para manejar la autenticación y el perfil de usuario.
+
+servers:
+  - url: http://localhost:3003
+    description: Servidor de desarrollo local
+
+paths:
+  /sesion:
+    post:
+      summary: Iniciar sesión
+      description: Inicia sesión para un usuario.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CredencialesUsuario'
+      responses:
+        '200':
+          description: Sesión iniciada con éxito.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaSesion'
+        '500':
+          description: Error interno del servidor.
+
+  /usuarios:
+    post:
+      summary: Crear un nuevo usuario
+      description: Registra un nuevo usuario en el sistema.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DatosUsuario'
+      responses:
+        '200':
+          description: Usuario creado con éxito.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Usuario'
+        '500':
+          description: Error interno del servidor.
+
+  /usuario/{id}:
+    put:
+      summary: Actualizar usuario
+      description: Actualiza los datos de un usuario existente.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActualizarUsuario'
+      responses:
+        '200':
+          description: Usuario actualizado con éxito.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Usuario'
+        '500':
+          description: Error interno del servidor.
+    get:
+      summary: Obtener datos de usuario
+      description: Devuelve los datos de un usuario específico.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Datos del usuario obtenidos con éxito.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Usuario'
+        '500':
+          description: Error interno del servidor.
+
+  /health:
+    get:
+      summary: Estado del servicio
+      description: Verifica el estado general del API Gateway y los servicios asociados.
+      responses:
+        '200':
+          description: Estado del servicio obtenido con éxito.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EstadoServicio'
+        '500':
+          description: Error interno del servidor.
+
+  /health/ready:
+    get:
+      summary: Estado de preparación del servicio
+      description: Verifica si el API Gateway está listo para recibir tráfico.
+      responses:
+        '200':
+          description: Estado de preparación obtenido con éxito.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EstadoPreparacion'
+        '503':
+          description: Servicio no disponible.
+
+  /health/live:
+    get:
+      summary: Comprobación de liveness
+      description: Verifica si el API Gateway está vivo.
+      responses:
+        '200':
+          description: El API Gateway está vivo.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: alive
+
+components:
+  schemas:
+    CredencialesUsuario:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        contrasena:
+          type: string
+      required:
+        - email
+        - contrasena
+
+    DatosUsuario:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        contrasena:
+          type: string
+        nombre:
+          type: string
+      required:
+        - email
+        - contrasena
+        - nombre
+
+    ActualizarUsuario:
+      type: object
+      properties:
+        nombre:
+          type: string
+        email:
+          type: string
+          format: email
+        contrasena:
+          type: string
+
+    RespuestaSesion:
+      type: object
+      properties:
+        token:
+          type: string
+
+    Usuario:
+      type: object
+      properties:
+        id:
+          type: string
+        nombre:
+          type: string
+        email:
+          type: string
+          format: email
+
+    EstadoServicio:
+      type: object
+      properties:
+        status:
+          type: string
+          example: up
+        details:
+          type: object
+          properties:
+            authService:
+              type: string
+            profileService:
+              type: string
+
+    EstadoPreparacion:
+      type: object
+      properties:
+        status:
+          type: string
+          example: ready
+        details:
+          type: object
+          properties:
+            authService:
+              type: string
+            profileService:
+              type: string

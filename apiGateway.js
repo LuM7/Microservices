@@ -1,13 +1,19 @@
 const express = require('express');
+const cors = require('cors');
 const axios = require('axios');
+const fs = require('fs');
+const bodyParser = require('body-parser');
 const app = express();
 const redis = require('ioredis');
 
 app.use(express.json());
+app.use(bodyParser.json());
 
 const PORT = 3003;
 const SERVICIO_AUTENTICACION_URL = 'http://app:3000';
 const SERVICIO_PERFIL_URL = 'http://perfil:3002';
+
+app.use(cors());
 
 // Configuración del cliente de Redis para publicar logs
 const redisClient = new redis({
@@ -19,8 +25,6 @@ const redisClient = new redis({
 function registrarLog(logData) {
     redisClient.publish('canal-logs', JSON.stringify(logData));
 }
-
-
 
 // Función para verificar la autenticación en app.js
 async function verificarAutenticacion(userId, token) {
