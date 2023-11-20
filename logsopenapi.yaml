@@ -141,6 +141,65 @@ paths:
                       $ref: '#/components/schemas/Log'
         '500':
           description: Error en el servidor
+  # Ruta para verificar el estado general del servicio (Health Check)
+  /health:
+    get:
+      summary: Estado general del servicio
+      responses:
+        '200':
+          description: El servicio está operativo
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: UP
+
+  # Ruta para verificar si el servicio está vivo (Liveness Check)
+  /health/live:
+    get:
+      summary: Comprobación de vitalidad del servicio
+      responses:
+        '200':
+          description: El servicio está vivo
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ALIVE
+
+  # Ruta para verificar si el servicio está listo para manejar tráfico (Readiness Check)
+  /health/ready:
+    get:
+      summary: Comprobación de preparación del servicio
+      responses:
+        '200':
+          description: El servicio está listo para manejar tráfico
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: READY
+        '500':
+          description: El servicio no está listo para manejar tráfico
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: NOT READY
+                  error:
+                    type: string
 
 components:
   schemas:

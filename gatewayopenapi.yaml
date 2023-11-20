@@ -59,6 +59,8 @@ paths:
           required: true
           schema:
             type: string
+      security:
+        - BearerAuth: []
       requestBody:
         required: true
         content:
@@ -83,6 +85,8 @@ paths:
           required: true
           schema:
             type: string
+      security:
+        - BearerAuth: []
       responses:
         '200':
           description: Datos del usuario obtenidos con éxito.
@@ -138,6 +142,11 @@ paths:
                     example: alive
 
 components:
+  securitySchemes:
+      BearerAuth: # Puedes poner el nombre que quieras aquí
+        type: http
+        scheme: bearer
+        bearerFormat: JWT # Si estás utilizando tokens JWT
   schemas:
     CredencialesUsuario:
       type: object
@@ -207,7 +216,7 @@ components:
               type: string
             profileService:
               type: string
-
+        
     EstadoPreparacion:
       type: object
       properties:
