@@ -327,9 +327,6 @@ app.put('/usuarios/:id/clave', verificarToken, async (req, res) => {
         return;
     }
 
-    // Aquí agregamos una impresión para mostrar el token recibido
-    console.log('Token recibido en la solicitud PUT:', req.header('Authorization'));
-    console.log('Token recibido en la solicitud PUT:', req.header('Authorization'));
     // Verificar si el usuario existe en la base de datos
     const user = await new Promise((resolve, reject) => {
         db.get('SELECT * FROM usuarios WHERE id = ?', [userId], (err, row) => {

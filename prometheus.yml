@@ -1,0 +1,19 @@
+global:
+  scrape_interval: 15s 
+
+scrape_configs:
+  - job_name: 'gestor_logs'
+    static_configs:
+      - targets: ['localhost:4001']
+
+  - job_name: 'app_autenticacion'
+    static_configs:
+      - targets: ['localhost:3000']
+
+  - job_name: 'gestor_perfiles'
+    static_configs:
+      - targets: ['localhost:3002']
+
+  - job_name: 'api_gateway'
+    static_configs:
+      - targets: ['localhost:3003']
