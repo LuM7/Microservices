@@ -1,4 +1,5 @@
 const express = require('express');
+const cors = require('cors');
 const redis = require('ioredis');
 const sqlite3 = require('sqlite3').verbose();
 const jwt = require('jsonwebtoken');
@@ -18,6 +19,7 @@ const verificarToken = require('./verificarToken');
 
 // Middleware para permitir JSON en las solicitudes
 app.use(express.json());
+app.use(cors());
 const resetTokens = {};
 app.use(bodyParser.json());
 

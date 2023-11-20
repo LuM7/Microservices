@@ -1,5 +1,9 @@
 const express = require('express');
+const cors = require('cors');
 const app = express();
+const fs = require('fs');
+const bodyParser = require('body-parser');
+const moment = require('moment-timezone');
 
 const redis = require('ioredis');
 module.exports = app;
@@ -9,10 +13,13 @@ const subscriberClient = new redis({
     port: process.env.REDIS_PORT,
 });
 
-
+app.use(cors());
 
 const sqlite3 = require('sqlite3').verbose();
 const db = new sqlite3.Database('logs.db');
+
+app.use(express.json());
+app.use(bodyParser.json());
 
 // Crear la tabla de logs si no existe
 db.run(`
@@ -176,13 +183,11 @@ app.get('/logs/:application', (req, res) => {
 
 // Ruta para crear un nuevo log
 app.post('/logs', (req, res) => {
-    const { application, tipoLog, modulo, resumen, descripcion } = req.body;
+    console.log(req.body);
 
-    if (!logData.application) {
-        console.error('El campo "application" es nulo o no está definido');
-        return;
-    }
-    if (!application || !tipoLog || !modulo || !resumen || !descripcion) {
+    const { application, tipo_log, modulo, resumen, descripcion } = req.body;
+
+    if (!application || !tipo_log || !modulo || !resumen || !descripcion) {
         res.status(400).json({ error: 'Todos los campos son obligatorios' });
         return;
     }
@@ -193,11 +198,12 @@ app.post('/logs', (req, res) => {
     const logData = {
         application,
         fecha_hora,
-        tipo_log: tipoLog,
+        tipo_log,
         modulo: modulo,
         resumen: resumen,
         descripcion: descripcion,
     };
+
 
     db.run('INSERT INTO logs (application, fecha_hora, tipo_log, modulo, resumen, descripcion) VALUES (?, ?, ?, ?, ?, ?)',
         [logData.application, logData.fecha_hora, logData.tipo_log, logData.modulo, logData.resumen, logData.descripcion], (err) => {

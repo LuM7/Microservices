@@ -1,16 +1,30 @@
 openapi: 3.0.0
 info:
-  title: API de Usuarios
-  version: 1.0.0
-  description: API para administrar usuarios y autenticación.
+  title: API de Gestión de Usuarios
+  description: API para la gestión de usuarios, autenticación y operaciones relacionadas.
+  version: "1.0.0"
+servers:
+  - url: http://localhost:3000
+    description: Servidor de desarrollo local
 
 paths:
   /usuarios:
     get:
       summary: Obtener todos los usuarios
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+          description: Número de página
+        - in: query
+          name: perPage
+          schema:
+            type: integer
+          description: Usuarios por página
       responses:
         '200':
-          description: Lista de usuarios recuperada con éxito
+          description: Lista de usuarios
           content:
             application/json:
               schema:
@@ -25,48 +39,23 @@ paths:
                   users:
                     type: array
                     items:
-                      type: object
-                      properties:
-                        id:
-                          type: integer
-                        nombre:
-                          type: string
-                        email:
-                          type: string
-                required:
-                  - page
-                  - perPage
-                  - totalUsers
-                  - users
+                      $ref: '#/components/schemas/Usuario'
         '500':
           description: Error en el servidor
 
-  /usuarios:
     post:
       summary: Agregar un nuevo usuario
       requestBody:
-        description: Datos del usuario a agregar
         required: true
         content:
           application/json:
             schema:
-              type: object
-              required:
-                - nombre
-                - contrasena
-                - email
-              properties:
-                nombre:
-                  type: string
-                contrasena:
-                  type: string
-                email:
-                  type: string
+              $ref: '#/components/schemas/Usuario'
       responses:
         '200':
           description: Usuario agregado con éxito
         '400':
-          description: Error en la solicitud, campos faltantes o correo electrónico ya registrado
+          description: Datos inválidos
         '500':
           description: Error en el servidor
 
@@ -79,8 +68,8 @@ paths:
           required: true
           schema:
             type: integer
+          description: ID del usuario
       requestBody:
-        description: Nuevos datos del usuario
         required: true
         content:
           application/json:
@@ -95,11 +84,12 @@ paths:
         '200':
           description: Datos de usuario actualizados con éxito
         '400':
-          description: Error en la solicitud, campos faltantes o usuario no encontrado
+          description: Datos inválidos
+        '404':
+          description: Usuario no encontrado
         '500':
           description: Error en el servidor
 
-  /usuarios/{id}:
     delete:
       summary: Eliminar un usuario por ID
       parameters:
@@ -108,27 +98,40 @@ paths:
           required: true
           schema:
             type: integer
+          description: ID del usuario
       responses:
         '200':
           description: Usuario eliminado con éxito
         '400':
-          description: Error en la solicitud, ID de usuario no proporcionado
+          description: ID de usuario no proporcionado
         '500':
           description: Error en el servidor
 
+  /autenticacion/{id}:
+    get:
+      summary: Verificar la autenticación del usuario
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: ID del usuario
+      responses:
+        '200':
+          description: Autenticación verificada con éxito
+        '401':
+          description: Usuario no autenticado
+
   /sesion:
     post:
-      summary: Iniciar sesión de usuario
+      summary: Inicio de sesión de usuario
       requestBody:
-        description: Correo electrónico y contraseña del usuario
         required: true
         content:
           application/json:
             schema:
               type: object
-              required:
-                - email
-                - contrasena
               properties:
                 email:
                   type: string
@@ -137,41 +140,27 @@ paths:
       responses:
         '200':
           description: Inicio de sesión exitoso
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                  token:
-                    type: string
         '400':
-          description: Error en la solicitud, correo electrónico y/o contraseña faltantes
+          description: Email y contraseña son obligatorios
         '401':
           description: Credenciales inválidas
-        '500':
-          description: Error en el servidor
 
   /usuarios/{id}/clave:
     put:
-      summary: Actualizar la contraseña del usuario por ID
+      summary: Actualizar la contraseña del usuario
       parameters:
         - in: path
           name: id
           required: true
           schema:
             type: integer
+          description: ID del usuario
       requestBody:
-        description: Contraseña actual y nueva contraseña
         required: true
         content:
           application/json:
             schema:
               type: object
-              required:
-                - contrasenaActual
-                - nuevaContrasena
               properties:
                 contrasenaActual:
                   type: string
@@ -181,7 +170,11 @@ paths:
         '200':
           description: Contraseña actualizada con éxito
         '400':
-          description: Error en la solicitud, campos faltantes, contraseña actual incorrecta o usuario no encontrado
+          description: Todos los campos son obligatorios
+        '401':
+          description: Contraseña actual incorrecta
+        '404':
+          description: Usuario no encontrado
         '500':
           description: Error en el servidor
 
@@ -189,48 +182,27 @@ paths:
     post:
       summary: Solicitar recuperación de contraseña
       requestBody:
-        description: Correo electrónico para la recuperación
         required: true
         content:
           application/json:
             schema:
               type: object
-              required:
-                - email
               properties:
                 email:
                   type: string
       responses:
         '200':
-          description: Se ha generado un token de recuperación
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  mensaje:
-                    type: string
-                  token:
-                    type: string
-        '400':
-          description: Error en la solicitud, correo electrónico faltante
-        '500':
-          description: Error en el servidor
+          description: Token de recuperación generado
 
   /restablecimiento_contra:
     post:
       summary: Restablecer la contraseña
       requestBody:
-        description: Correo electrónico, nueva contraseña y token de recuperación
         required: true
         content:
           application/json:
             schema:
               type: object
-              required:
-                - email
-                - new_password
-                - reset_token
               properties:
                 email:
                   type: string
@@ -240,8 +212,47 @@ paths:
                   type: string
       responses:
         '200':
-          description: Contraseña restablecida con éxito
+          description: Contraseña actualizada exitosamente
         '400':
-          description: Error en la solicitud, token de recuperación inválido o expirado, o datos faltantes
+          description: Token de recuperación inválido o expirado
+
+  /health:
+    get:
+      summary: Verificar el estado general del servicio
+      responses:
+        '200':
+          description: Servicio activo
         '500':
-          description: Error en el servidor
+          description: Servicio inactivo
+
+  /health/ready:
+    get:
+      summary: Verificar si el servicio está listo para manejar tráfico
+      responses:
+        '200':
+          description: Servicio listo
+        '500':
+          description: Servicio no listo
+
+  /health/live:
+    get:
+      summary: Verificar si el servicio está vivo
+      responses:
+        '200':
+          description: Servicio vivo
+        '500':
+          description: Servicio no vivo
+
+components:
+  schemas:
+    Usuario:
+      type: object
+      properties:
+        id:
+          type: integer
+        nombre:
+          type: string
+        contrasena:
+          type: string
+        email:
+          type: string

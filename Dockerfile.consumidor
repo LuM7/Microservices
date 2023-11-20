@@ -10,5 +10,7 @@ COPY gestorLogs.js package*.json /app/
 # Instalar las dependencias de la aplicación
 RUN npm install
 
+RUN npm install cors
+
 # Comando para ejecutar la aplicación
 CMD ["node", "gestorLogs.js"]

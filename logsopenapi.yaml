@@ -1,0 +1,164 @@
+openapi: 3.0.0
+info:
+  title: API de Logs
+  description: API para manejar y consultar registros de logs.
+  version: "1.0.0"
+servers:
+  - url: http://localhost:4001
+    description: Servidor de desarrollo local
+paths:
+  /logs:
+    get:
+      summary: Obtener todos los logs
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+          description: Número de página para la paginación
+        - in: query
+          name: perPage
+          schema:
+            type: integer
+            default: 10
+          description: Cantidad de logs por página
+        - in: query
+          name: fromDate
+          schema:
+            type: string
+            format: date-time
+          description: Fecha inicial para filtrar logs
+        - in: query
+          name: toDate
+          schema:
+            type: string
+            format: date-time
+          description: Fecha final para filtrar logs
+        - in: query
+          name: tipoLog
+          schema:
+            type: string
+          description: Tipo de log para filtrar
+        - in: query
+          name: application
+          schema:
+            type: string
+          description: Aplicación específica para filtrar logs
+      responses:
+        '200':
+          description: Lista de logs
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  page:
+                    type: integer
+                  perPage:
+                    type: integer
+                  totalLogs:
+                    type: integer
+                  logs:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Log'
+        '500':
+          description: Error en el servidor
+
+    post:
+      summary: Crear un nuevo log
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Log'
+      responses:
+        '200':
+          description: Registro de log creado con éxito
+        '400':
+          description: Todos los campos son obligatorios
+        '500':
+          description: Error en el servidor al crear el log
+
+  /logs/{application}:
+    get:
+      summary: Obtener todos los logs de una aplicación específica
+      parameters:
+        - in: path
+          name: application
+          required: true
+          schema:
+            type: string
+          description: Nombre de la aplicación
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+          description: Número de página para la paginación
+        - in: query
+          name: perPage
+          schema:
+            type: integer
+            default: 10
+          description: Cantidad de logs por página
+        - in: query
+          name: fromDate
+          schema:
+            type: string
+            format: date-time
+          description: Fecha inicial para filtrar logs
+        - in: query
+          name: toDate
+          schema:
+            type: string
+            format: date-time
+          description: Fecha final para filtrar logs
+        - in: query
+          name: tipoLog
+          schema:
+            type: string
+          description: Tipo de log para filtrar
+      responses:
+        '200':
+          description: Lista de logs de la aplicación
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  page:
+                    type: integer
+                  perPage:
+                    type: integer
+                  totalLogs:
+                    type: integer
+                  logs:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Log'
+        '500':
+          description: Error en el servidor
+
+components:
+  schemas:
+    Log:
+      type: object
+      properties:
+        id:
+          type: integer
+        fecha_hora:
+          type: string
+          format: date-time
+        tipo_log:
+          type: string
+        modulo:
+          type: string
+        resumen:
+          type: string
+        descripcion:
+          type: string
+        application:
+          type: string
