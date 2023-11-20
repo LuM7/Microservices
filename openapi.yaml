@@ -117,6 +117,8 @@ paths:
           schema:
             type: integer
           description: ID del usuario
+      security:
+        - BearerAuth: []
       responses:
         '200':
           description: Autenticación verificada con éxito
@@ -166,6 +168,8 @@ paths:
                   type: string
                 nuevaContrasena:
                   type: string
+      security:
+        - BearerAuth: []
       responses:
         '200':
           description: Contraseña actualizada con éxito
@@ -244,6 +248,11 @@ paths:
           description: Servicio no vivo
 
 components:
+  securitySchemes:
+    BearerAuth: # Puedes poner el nombre que quieras aquí
+      type: http
+      scheme: bearer
+      bearerFormat: JWT # Si estás utilizando tokens JWT
   schemas:
     Usuario:
       type: object
