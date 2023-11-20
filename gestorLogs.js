@@ -5,7 +5,7 @@ const redis = require('ioredis');
 module.exports = app;
 
 const subscriberClient = new redis({
-    host: 'redis',
+    host: process.env.REDIS_HOST,
     port: process.env.REDIS_PORT,
 });
 

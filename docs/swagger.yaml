@@ -1,0 +1,182 @@
+basePath: /
+definitions:
+  main.HTTPError:
+    properties:
+      error:
+        type: string
+    type: object
+  main.HTTPSuccess:
+    properties:
+      message:
+        type: string
+    type: object
+  main.HealthStatus:
+    properties:
+      error:
+        type: string
+      status:
+        type: string
+    type: object
+  main.PerfilUsuario:
+    properties:
+      apodo:
+        type: string
+      biografia:
+        type: string
+      direccion:
+        type: string
+      id:
+        type: integer
+      info_contacto:
+        type: string
+      organizacion:
+        type: string
+      pais_residencia:
+        type: string
+      redes_sociales:
+        items:
+          type: string
+        type: array
+      url_personal:
+        type: string
+    type: object
+host: localhost:3002
+info:
+  contact: {}
+  description: Esta es una muestra de servidor PerfilUsuario.
+  title: Servicio de Gestión de Perfiles API
+  version: "1"
+paths:
+  /health:
+    get:
+      description: Indica si el servicio está arriba sin verificar dependencias
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Servicio en funcionamiento
+          schema:
+            $ref: '#/definitions/main.HealthStatus'
+      summary: Verificar el estado general del servicio
+      tags:
+      - salud
+  /health/live:
+    get:
+      description: Indica si el servicio está vivo y corriendo
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Servicio vivo y corriendo
+          schema:
+            $ref: '#/definitions/main.HealthStatus'
+      summary: Verificar el estado de liveness del servicio
+      tags:
+      - salud
+  /health/ready:
+    get:
+      description: Verifica si las dependencias del servicio están listas para manejar
+        tráfico
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Servicio listo para manejar tráfico
+          schema:
+            $ref: '#/definitions/main.HealthStatus'
+        "500":
+          description: Servicio no está listo para manejar tráfico
+          schema:
+            $ref: '#/definitions/main.HealthStatus'
+      summary: Verificar el estado de readiness del servicio
+      tags:
+      - salud
+  /perfil/{id}:
+    get:
+      consumes:
+      - application/json
+      description: obtiene el perfil de usuario por ID
+      operationId: obtener-perfil
+      parameters:
+      - description: ID del Usuario
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.PerfilUsuario'
+      summary: Obtener un perfil de usuario
+    put:
+      consumes:
+      - application/json
+      description: Actualiza los datos del perfil de usuario basándose en el id proporcionado
+      parameters:
+      - description: Token de autenticación
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: ID del Usuario
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Datos del perfil a actualizar
+        in: body
+        name: perfil
+        required: true
+        schema:
+          $ref: '#/definitions/main.PerfilUsuario'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Perfil actualizado con éxito
+          schema:
+            $ref: '#/definitions/main.HTTPSuccess'
+        "400":
+          description: Datos de perfil no válidos
+          schema:
+            $ref: '#/definitions/main.HTTPError'
+        "401":
+          description: Token no válido
+          schema:
+            $ref: '#/definitions/main.HTTPError'
+        "403":
+          description: No tienes permiso para actualizar este perfil
+          schema:
+            $ref: '#/definitions/main.HTTPError'
+        "500":
+          description: Error al actualizar el perfil
+          schema:
+            $ref: '#/definitions/main.HTTPError'
+      summary: Actualizar un perfil de usuario
+      tags:
+      - perfil
+  /perfiles:
+    get:
+      consumes:
+      - application/json
+      description: Devuelve un arreglo de todos los perfiles de usuario
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/main.PerfilUsuario'
+            type: array
+        "500":
+          description: Error al recuperar los perfiles
+          schema:
+            $ref: '#/definitions/main.HTTPError'
+      summary: Lista todos los perfiles de usuario
+      tags:
+      - perfiles
+swagger: "2.0"

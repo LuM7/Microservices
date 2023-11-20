@@ -120,3 +120,21 @@ components:
             type: string
       required:
         - id
+    HTTPSuccess:
+          type: object
+          properties:
+            message:
+              type: string
+        HTTPError:
+          type: object
+          properties:
+            error:
+              type: string
+    HealthStatus:
+          type: object
+          properties:
+            status:
+              type: string
+            error:
+              type: string
+              nullable: true
