@@ -15,6 +15,36 @@ const redisClient = new redis({
     port: 6379
 });
 
+//Monitorización
+const promClient = require('prom-client');
+const register = new promClient.Registry();
+promClient.collectDefaultMetrics({ register });
+
+const contadorSalud = new promClient.Counter({
+    name: 'contador_salud_api_gateway',
+    help: 'Número total de solicitudes a la ruta de salud',
+    labelNames: ['ruta']
+});
+
+const contadorSaludVivo = new promClient.Counter({
+    name: 'contador_salud_vivo_api_gateway',
+    help: 'Número total de solicitudes a la ruta de salud viva',
+    labelNames: ['ruta']
+});
+
+const contadorSaludListo = new promClient.Counter({
+    name: 'contador_salud_listo_api_gateway',
+    help: 'Número total de solicitudes a la ruta de salud listo',
+    labelNames: ['ruta']
+});
+
+register.registerMetric(contadorSalud);
+register.registerMetric(contadorSaludVivo);
+register.registerMetric(contadorSaludListo);
+
+
+
+
 // Función para registrar logs
 function registrarLog(logData) {
     redisClient.publish('canal-logs', JSON.stringify(logData));
@@ -196,6 +226,7 @@ async function checkProfileService() {
 
 // Ruta para verificar el estado general del API Gateway
 app.get('/health', async (req, res) => {
+    contadorSalud.inc({ ruta: 'health' });
     try {
         const authServiceStatus = await checkAuthService();
         const profileServiceStatus = await checkProfileService();
@@ -217,6 +248,7 @@ app.get('/health', async (req, res) => {
 
 // Ruta para verificar si el API Gateway está listo para recibir tráfico
 app.get('/health/ready', async (req, res) => {
+    contadorSaludListo.inc({ ruta: 'health/ready' });
     try {
         const authServiceStatus = await checkAuthService();
         const profileServiceStatus = await checkProfileService();
@@ -240,6 +272,7 @@ app.get('/health/ready', async (req, res) => {
 
 // Ruta para verificar si el API Gateway está vivo
 app.get('/health/live', (req, res) => {
+    contadorSaludVivo.inc({ ruta: 'health/live' });
     // Esta es una comprobación simple de liveness, por lo que simplemente respondemos con "alive"
     res.json({ status: 'alive' });
 });

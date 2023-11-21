@@ -4,12 +4,43 @@ const app = express();
 const redis = require('ioredis');
 module.exports = app;
 
+const promClient = require('prom-client');
+const register = new promClient.Registry();
+promClient.collectDefaultMetrics({ register });
+
+//Metricas
+const contadorLogsCreados = new promClient.Counter({
+    name: 'total_logs_creados',
+    help: 'Número total de logs creados'
+});
+
 const subscriberClient = new redis({
     host: process.env.REDIS_HOST,
     port: process.env.REDIS_PORT,
 });
 
+const contadorSalud = new promClient.Counter({
+    name: 'contador_salud',
+    help: 'Número total de solicitudes a la ruta de salud',
+    labelNames: ['ruta']
+});
 
+const contadorSaludVivo = new promClient.Counter({
+    name: 'contador_salud_vivo',
+    help: 'Número total de solicitudes a la ruta de salud viva',
+    labelNames: ['ruta']
+});
+
+const contadorSaludListo = new promClient.Counter({
+    name: 'contador_salud_listo',
+    help: 'Número total de solicitudes a la ruta de salud listo',
+    labelNames: ['ruta']
+});
+
+register.registerMetric(contadorSalud);
+register.registerMetric(contadorSaludVivo);
+register.registerMetric(contadorSaludListo);
+register.registerMetric(contadorLogsCreados)
 
 const sqlite3 = require('sqlite3').verbose();
 const db = new sqlite3.Database('logs.db');
@@ -206,23 +237,26 @@ app.post('/logs', (req, res) => {
                 res.status(500).json({ error: 'Error en el servidor al crear el log' });
                 return;
             }
-
             res.json({ message: 'Registro de log creado con éxito' });
+            contadorLogsCreados.inc();
         });
 });
 
 // Ruta para verificar el estado general del servicio (Health Check)
 app.get('/health', (req, res) => {
+    contadorSalud.inc({ ruta: 'health' });
     res.json({ status: 'UP' });
 });
 
 // Ruta para verificar si el servicio está vivo (Liveness Check)
 app.get('/health/live', (req, res) => {
+    contadorSaludVivo.inc({ ruta: 'health/live' });
     res.json({ status: 'ALIVE' });
 });
 
 // Ruta para verificar si el servicio está listo para manejar tráfico (Readiness Check)
 app.get('/health/ready', async (req, res) => {
+    contadorSaludListo.inc({ ruta: 'health/ready' });
     try {
         // Verificar la conexión a la base de datos SQLite
         await new Promise((resolve, reject) => {
@@ -244,6 +278,16 @@ app.get('/health/ready', async (req, res) => {
     }
 });
 
+
+//Metricas
+app.get('/metrics', async (req, res) => {
+    try {
+        res.set('Content-Type', register.contentType);
+        res.end(await register.metrics());
+    } catch (err) {
+        res.status(500).end(err);
+    }
+});
 
 
 const port = 4001;

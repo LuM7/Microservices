@@ -10,6 +10,56 @@ const port = process.env.PORT || 3000;
 const secret = 'tokenlogin2023';
 const moment = require('moment-timezone');
 const nombreAplicación = "appUsuarios";
+const promClient = require('prom-client');
+const register = new promClient.Registry();
+promClient.collectDefaultMetrics({ register });
+
+//Metricas
+
+// Contadores para las rutas de salud
+const healthCheckCounter = new promClient.Counter({
+    name: 'solicitudes_rutas_salud',
+    help: 'Número total de solicitudes a la ruta de salud',
+    labelNames: ['route'],
+});
+
+
+const contadorUsuariosCreados = new promClient.Counter({
+    name: 'total_usuarios_creados',
+    help: 'Número total de usuarios creados'
+});
+
+const contadorUsuariosEliminados = new promClient.Counter({
+    name: 'total_usuarios_eliminados',
+    help: 'Número total de usuarios eliminados'
+});
+
+const contadorInicioSesionExitoso = new promClient.Counter({
+    name: 'total_inicios_sesion_exitosos',
+    help: 'Número total de inicios de sesión exitosos'
+});
+
+const contadorInicioSesionNoExitoso = new promClient.Counter({
+    name: 'total_inicios_sesion_no_exitosos',
+    help: 'Número total de inicios de sesión fallidos'
+});
+
+register.registerMetric(contadorUsuariosCreados)
+register.registerMetric(contadorUsuariosEliminados)
+register.registerMetric(contadorInicioSesionExitoso)
+register.registerMetric(contadorInicioSesionNoExitoso)
+register.registerMetric(healthCheckCounter);
+
+// const saludBaseDatos = new promClient.Gauge({
+//     name: 'app_salud_base_datos',
+//     help: 'Estado de salud de la conexión a la base de datos (1 = saludable, 0 = no saludable)'
+// });
+
+// const saludRedis = new promClient.Gauge({
+//     name: 'app_salud_redis',
+//     help: 'Estado de salud de la conexión a Redis (1 = saludable, 0 = no saludable)'
+// });
+
 
 // Conectar a la base de datos SQLite
 const db = new sqlite3.Database(process.env.DATABASE_URL);
@@ -123,6 +173,7 @@ app.post('/usuarios', (req, res) => {
             }
 
             const userId = this.lastID;
+            contadorUsuariosCreados.inc();
             res.json({ message: 'Usuario agregado con éxito', userId: userId });
 
             // Crear y publicar el evento de usuario registrado en Redis
@@ -225,7 +276,7 @@ app.delete('/usuarios/:id', verificarToken, (req, res) => {
             console.error(err.message);
             return res.status(500).json({ error: 'Error en el servidor' });
         }
-
+        contadorUsuariosEliminados.inc();
         // Crear un registro de log para el servicio de registro de usuario
         const logData = {
             application: nombreAplicación,
@@ -256,6 +307,7 @@ app.post('/sesion', async (req, res) => {
     // Validar los datos de inicio de sesión
     if (!email || !contrasena) {
         res.status(400).json({ error: 'Email y contraseña son obligatorios' });
+        contadorInicioSesionNoExitoso.inc();
         return;
     }
 
@@ -271,7 +323,7 @@ app.post('/sesion', async (req, res) => {
 
     if (!user || contrasena !== user.contrasena) {
         res.status(401).json({ error: 'Credenciales inválidas' });
-
+        contadorInicioSesionNoExitoso.inc();
         // Crear un registro de log para el error de autenticación
         const errorLogData = {
             application: nombreAplicación,
@@ -298,6 +350,7 @@ app.post('/sesion', async (req, res) => {
         descripcion: `Se ha generado un nuevo token JWT para el usuario con correo ${email}`,
     };
 
+    contadorInicioSesionExitoso.inc();
     // Publica el LOG en el canal 'canal-logs' de Redis
     publisherClient.publish(canalLogs, JSON.stringify(logData));
     res.json({ message: 'Inicio de sesión exitoso', token });
@@ -491,6 +544,7 @@ function checkRedis() {
 
 // Ruta para verificar el estado general del servicio
 app.get('/health', async (req, res) => {
+    healthCheckCounter.inc({ route: 'health' });
     try {
         const dbStatus = await checkDatabase();
         const redisStatus = await checkRedis();
@@ -530,6 +584,7 @@ app.get('/health', async (req, res) => {
 
 // Ruta para verificar si el servicio está listo para manejar tráfico
 app.get('/health/ready', (req, res) => {
+    healthCheckCounter.inc({ route: 'health/ready' });
     try {
         // Verifica si la base de datos está conectada
         db.get('SELECT 1', (err) => {
@@ -554,9 +609,23 @@ app.get('/health/ready', (req, res) => {
 
 // Ruta para verificar si el servicio está vivo
 app.get('/health/live', (req, res) => {
+    healthCheckCounter.inc({ route: 'health/live' });
     // Si puedes responder a esta solicitud, entonces el servicio está vivo
     res.json({ status: 'live' });
 });
+
+
+//Metricas
+app.get('/metrics', async (req, res) => {
+    try {
+        res.set('Content-Type', register.contentType);
+        res.end(await register.metrics());
+    } catch (err) {
+        res.status(500).end(err);
+    }
+});
+
+
 
 
 // Iniciar el servidor

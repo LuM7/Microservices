@@ -17,12 +17,32 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis"
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 const SecretKey = "tokenlogin2023"
 
 // variables globales para el cliente de redis
 var redisCliente *redis.Client
+
+var (
+	contadorVerificacionesSalud = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "servicio_perfil_verificaciones_salud_total",
+		Help: "Número total de verificaciones de salud realizadas.",
+	}, []string{"endpoint"})
+
+	contadorVerificacionesListo = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "servicio_perfil_verificaciones_listo_total",
+		Help: "Número total de verificaciones de listo (readiness) realizadas.",
+	})
+
+	contadorVerificacionesVivo = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "servicio_perfil_verificaciones_vivo_total",
+		Help: "Número total de verificaciones de vivo (liveness) realizadas.",
+	})
+)
 
 // Variables para establecer la conexión a la bd
 var db *sql.DB
@@ -67,6 +87,8 @@ func main() {
 	}
 
 	r := gin.Default()
+	// Agregar la ruta para exponer las métricas
+	r.GET("/metrics", prometheusHandler())
 	// r.Static("/docs", "./docs")
 	// r.GET("/swagger/swagger.json", func(c *gin.Context) {
 	// 	c.File("./docs/swagger.json")
@@ -445,6 +467,7 @@ func validarToken(tokenString string) (*jwt.Token, error) {
 // @Success 200 {object} HealthStatus "Servicio en funcionamiento"
 // @Router /health [get]
 func healthCheck(c *gin.Context) {
+	contadorVerificacionesSalud.WithLabelValues("/health").Inc()
 	c.JSON(http.StatusOK, gin.H{"status": "UP"})
 }
 
@@ -458,6 +481,7 @@ func healthCheck(c *gin.Context) {
 // @Failure 500 {object} HealthStatus "Servicio no está listo para manejar tráfico"
 // @Router /health/ready [get]
 func healthReady(c *gin.Context) {
+	contadorVerificacionesListo.Inc()
 	// Verificar la conexión a la base de datos
 	if err := db.Ping(); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"status": "DOWN", "error": "Database not ready"})
@@ -474,6 +498,13 @@ func healthReady(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "READY"})
 }
 
+func prometheusHandler() gin.HandlerFunc {
+	h := promhttp.Handler()
+	return func(c *gin.Context) {
+		h.ServeHTTP(c.Writer, c.Request)
+	}
+}
+
 // Health Check de liveness
 
 // HealthLive verifica si el servicio está vivo
@@ -484,6 +515,7 @@ func healthReady(c *gin.Context) {
 // @Success 200 {object} HealthStatus "Servicio vivo y corriendo"
 // @Router /health/live [get]
 func healthLive(c *gin.Context) {
+	contadorVerificacionesVivo.Inc()
 	// Aquí simplemente devuelves que el servicio está vivo
 	c.JSON(http.StatusOK, gin.H{"status": "ALIVE"})
 }
