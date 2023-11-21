@@ -39,11 +39,6 @@ type PerfilUsuario struct {
 	RedesSociales  []string `json:"redes_sociales"`
 }
 
-// @title Servicio de Gestión de Perfiles API
-// @version 1
-// @description Esta es una muestra de servidor PerfilUsuario.
-// @host localhost:3002
-// @BasePath /
 func main() {
 	var err error
 
@@ -67,13 +62,6 @@ func main() {
 	}
 
 	r := gin.Default()
-	// r.Static("/docs", "./docs")
-	// r.GET("/swagger/swagger.json", func(c *gin.Context) {
-	// 	c.File("./docs/swagger.json")
-	// })
-
-	// url := ginSwagger.URL("http://localhost:3002/swagger/swagger.json")
-	// r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, url))
 
 	go escucharEventosRegistro()
 
@@ -105,14 +93,6 @@ func crearTablaPerfiles() error {
 	return err
 }
 
-// @Summary Obtener un perfil de usuario
-// @Description obtiene el perfil de usuario por ID
-// @ID obtener-perfil
-// @Accept  json
-// @Produce  json
-// @Param id path int true "ID del Usuario"
-// @Success 200 {object} PerfilUsuario
-// @Router /perfil/{id} [get]
 func obtenerPerfil(c *gin.Context) {
 	userID := c.Param("id")
 
@@ -145,14 +125,6 @@ func obtenerPerfil(c *gin.Context) {
 }
 
 // ListarPerfiles lista todos los perfiles de usuario
-// @Summary Lista todos los perfiles de usuario
-// @Description Devuelve un arreglo de todos los perfiles de usuario
-// @Tags perfiles
-// @Accept json
-// @Produce json
-// @Success 200 {array} PerfilUsuario
-// @Failure 500 {object} HTTPError "Error al recuperar los perfiles"
-// @Router /perfiles [get]
 func listarPerfiles(c *gin.Context) {
 	// Realiza una consulta SQL para obtener todos los perfiles
 	query := "SELECT id, url_personal, apodo, info_contacto, direccion, biografia, organizacion, pais_residencia, redes_sociales FROM perfiles_usuarios"
@@ -274,20 +246,6 @@ func escucharEventosRegistro() {
 }
 
 // ActualizarPerfil actualiza el perfil de un usuario
-// @Summary Actualizar un perfil de usuario
-// @Description Actualiza los datos del perfil de usuario basándose en el id proporcionado
-// @Tags perfil
-// @Accept json
-// @Produce json
-// @Param Authorization header string true "Token de autenticación"
-// @Param id path int true "ID del Usuario"
-// @Param perfil body PerfilUsuario true "Datos del perfil a actualizar"
-// @Success 200 {object} HTTPSuccess "Perfil actualizado con éxito"
-// @Failure 400 {object} HTTPError "Datos de perfil no válidos"
-// @Failure 401 {object} HTTPError "Token no válido"
-// @Failure 403 {object} HTTPError "No tienes permiso para actualizar este perfil"
-// @Failure 500 {object} HTTPError "Error al actualizar el perfil"
-// @Router /perfil/{id} [put]
 func actualizarPerfil(c *gin.Context) {
 	// Obtener el token de la cabecera Authorization
 	tokenString := c.GetHeader("Authorization")
@@ -436,27 +394,11 @@ func validarToken(tokenString string) (*jwt.Token, error) {
 }
 
 // Health Check general
-
-// HealthCheck informa el estado general del servicio
-// @Summary Verificar el estado general del servicio
-// @Description Indica si el servicio está arriba sin verificar dependencias
-// @Tags salud
-// @Produce json
-// @Success 200 {object} HealthStatus "Servicio en funcionamiento"
-// @Router /health [get]
 func healthCheck(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "UP"})
 }
 
 // Health Check de readiness
-// HealthReady verifica la preparación del servicio para manejar tráfico
-// @Summary Verificar el estado de readiness del servicio
-// @Description Verifica si las dependencias del servicio están listas para manejar tráfico
-// @Tags salud
-// @Produce json
-// @Success 200 {object} HealthStatus "Servicio listo para manejar tráfico"
-// @Failure 500 {object} HealthStatus "Servicio no está listo para manejar tráfico"
-// @Router /health/ready [get]
 func healthReady(c *gin.Context) {
 	// Verificar la conexión a la base de datos
 	if err := db.Ping(); err != nil {
@@ -477,12 +419,6 @@ func healthReady(c *gin.Context) {
 // Health Check de liveness
 
 // HealthLive verifica si el servicio está vivo
-// @Summary Verificar el estado de liveness del servicio
-// @Description Indica si el servicio está vivo y corriendo
-// @Tags salud
-// @Produce json
-// @Success 200 {object} HealthStatus "Servicio vivo y corriendo"
-// @Router /health/live [get]
 func healthLive(c *gin.Context) {
 	// Aquí simplemente devuelves que el servicio está vivo
 	c.JSON(http.StatusOK, gin.H{"status": "ALIVE"})

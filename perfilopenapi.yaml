@@ -1,42 +1,43 @@
 openapi: 3.0.0
 info:
-  title: Servicio de Gestión de Perfiles
-  description: API para la gestión de perfiles de usuario.
+  title: API de Gestión de Perfiles
+  description: API para manejar y consultar perfiles de usuarios.
   version: "1.0.0"
 servers:
   - url: http://localhost:3002
-    description: Servidor de desarrollo
+    description: Servidor de desarrollo local
 
 paths:
   /perfil/{id}:
     get:
-      summary: Obtener un perfil de usuario
+      summary: Obtener perfil de usuario
       parameters:
         - in: path
           name: id
           required: true
           schema:
             type: integer
-          description: ID del usuario
+          description: ID del perfil de usuario
       responses:
         '200':
-          description: Perfil de usuario encontrado
+          description: Perfil de usuario obtenido con éxito
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/PerfilUsuario'
         '404':
           description: Usuario no encontrado
-
+        '500':
+          description: Error al consultar la base de datos
     put:
-      summary: Actualizar un perfil de usuario
+      summary: Actualizar perfil de usuario
       parameters:
         - in: path
           name: id
           required: true
           schema:
             type: integer
-          description: ID del usuario
+          description: ID del perfil de usuario
       requestBody:
         required: true
         content:
@@ -45,7 +46,11 @@ paths:
               $ref: '#/components/schemas/PerfilUsuario'
       responses:
         '200':
-          description: Perfil actualizado con éxito
+          description: Perfil de usuario actualizado con éxito
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPSuccess'
         '400':
           description: Datos de perfil no válidos
         '401':
@@ -75,23 +80,39 @@ paths:
       summary: Verificar el estado general del servicio
       responses:
         '200':
-          description: Servicio en funcionamiento
+          description: El servicio está operativo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
 
   /health/ready:
     get:
-      summary: Verificar el estado de readiness del servicio
+      summary: Verificar si el servicio está listo para manejar tráfico
       responses:
         '200':
-          description: Servicio listo
+          description: El servicio está listo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
         '500':
-          description: Servicio no está listo
+          description: El servicio no está listo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
 
   /health/live:
     get:
-      summary: Verificar el estado de liveness del servicio
+      summary: Verificar si el servicio está vivo
       responses:
         '200':
-          description: Servicio vivo
+          description: El servicio está vivo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
 
 components:
   schemas:
@@ -120,21 +141,30 @@ components:
             type: string
       required:
         - id
-    HTTPSuccess:
-          type: object
-          properties:
-            message:
-              type: string
-        HTTPError:
-          type: object
-          properties:
-            error:
-              type: string
+
     HealthStatus:
-          type: object
-          properties:
-            status:
-              type: string
-            error:
-              type: string
-              nullable: true
+      type: object
+      properties:
+        status:
+          type: string
+        error:
+          type: string
+          nullable: true
+
+    HTTPError:
+      type: object
+      properties:
+        error:
+          type: string
+
+    HTTPSuccess:
+      type: object
+      properties:
+        message:
+          type: string
+
+securitySchemes:
+  BearerAuth:
+    type: http
+    scheme: bearer
+    bearerFormat: JWT
