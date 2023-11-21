@@ -4,16 +4,16 @@ global:
 scrape_configs:
   - job_name: 'gestor_logs'
     static_configs:
-      - targets: ['localhost:4001']
+      - targets: ['consumidor:4001']
 
   - job_name: 'app_autenticacion'
     static_configs:
-      - targets: ['localhost:3000']
+      - targets: ['app:3000']
 
-  - job_name: 'gestor_perfiles'
+  - job_name: 'perfil'
     static_configs:
-      - targets: ['localhost:3002']
+      - targets: ['perfil:3002']
 
   - job_name: 'api_gateway'
     static_configs:
-      - targets: ['localhost:3003']
+      - targets: ['api-gateway:3003']
