@@ -44,6 +44,8 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/PerfilUsuario'
+      security:
+        - BearerAuth: []
       responses:
         '200':
           description: Perfil de usuario actualizado con éxito
@@ -163,8 +165,8 @@ components:
         message:
           type: string
 
-securitySchemes:
-  BearerAuth:
-    type: http
-    scheme: bearer
-    bearerFormat: JWT
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

@@ -16,6 +16,7 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis"
+	"github.com/gin-contrib/cors"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -62,6 +63,14 @@ func main() {
 	}
 
 	r := gin.Default()
+
+    // Configurar CORS para permitir todos los orígenes
+    r.Use(cors.New(cors.Config{
+        AllowAllOrigins: true,
+        AllowMethods:    []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+        AllowHeaders:    []string{"Origin", "Authorization", "Content-Type"},
+        ExposeHeaders:   []string{"Content-Length"},
+    }))
 
 	go escucharEventosRegistro()
 

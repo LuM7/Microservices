@@ -99,6 +99,8 @@ paths:
           schema:
             type: integer
           description: ID del usuario
+      security:
+        - BearerAuth: []
       responses:
         '200':
           description: Usuario eliminado con éxito

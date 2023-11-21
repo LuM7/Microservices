@@ -17,6 +17,8 @@ COPY perfil_usuario.db /app/
 RUN go get github.com/gin-gonic/gin \
     && go get github.com/mattn/go-sqlite3
 
+RUN go get -u github.com/gin-contrib/cors
+
 # Compilar la aplicación
 RUN go build -o main .
 
